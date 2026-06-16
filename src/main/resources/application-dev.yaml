@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/notification_service_db_dev
+    username: lendmate
+    password: lendmate
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    com:
+      project:
+        lendmate: DEBUG
+

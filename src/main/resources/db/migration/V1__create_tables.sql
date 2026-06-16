@@ -1,0 +1,13 @@
+-- CATEGORY
+CREATE TABLE notification (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    type VARCHAR(50) NOT NULL,        -- ORDER_CONFIRMED, RETURN_REMINDER, NEW_REQUEST, PAYMENT_RECEIVED
+    channel VARCHAR(20) NOT NULL,     -- EMAIL, SMS, PUSH, IN_APP
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    status VARCHAR(20) NOT NULL,      -- PENDING, SENT, FAILED, READ
+    read_at TIMESTAMP,
+    sent_at TIMESTAMP,
+    created_at TIMESTAMP
+);
