@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 8px; padding: 30px; }
+        .header { background-color: #4CAF50; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+        .content { padding: 20px; color: #333; }
+        .order-id { font-size: 24px; font-weight: bold; color: #4CAF50; }
+        .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Siparişiniz Alındı!</h1>
+    </div>
+    <div class="content">
+        <p>Merhaba,</p>
+        <p>Siparişiniz başarıyla oluşturuldu.</p>
+        <p>Sipariş Numaranız: <span class="order-id" th:text="${orderId}"></span></p>
+        <p>Siparişinizi takip etmek için uygulamamızı kullanabilirsiniz.</p>
+        <p>Teşekkür ederiz!</p>
+    </div>
+    <div class="footer">
+        <p>Bu mail otomatik gönderilmiştir, lütfen yanıtlamayınız.</p>
+    </div>
+</div>
+</body>
+</html>

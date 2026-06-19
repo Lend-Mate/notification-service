@@ -9,12 +9,15 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class MailServiceImpl implements MailService {
     private final JavaMailSender mailSender;
+    private final SpringTemplateEngine templateEngine;
 
     @Override
     public void sendPlainText(String to, String subject, String body) {
@@ -36,6 +39,26 @@ public class MailServiceImpl implements MailService {
             mailSender.send(message);
         } catch (MessagingException ex){
             log.debug("exception: " + ex);
+        }
+    }
+
+    @Override
+    public void sendOrderConfirmation(String to, Long orderId) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            Context context = new Context();
+            context.setVariable("orderId", orderId);
+
+            String html = templateEngine.process("order-confirmation", context);
+            helper.setTo(to);
+            helper.setSubject("Siparişiniz Alındı!");
+            helper.setText(html, true);
+            mailSender.send(message);
+            log.info("Mail gönderildi: {}", to);
+        } catch (MessagingException e) {
+            log.error("Mail gönderilemedi: {}", e.getMessage());
         }
     }
 }
