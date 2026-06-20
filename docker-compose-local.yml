@@ -1,0 +1,22 @@
+networks:
+  lendmate-net:
+    external: true
+
+services:
+  notification-service:
+    image: "notification-service"
+    build: .
+    container_name: notification-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notification_service_db_dev
+      SPRING_DATASOURCE_USERNAME: lendmate
+      SPRING_DATASOURCE_PASSWORD: lendmate
+      SPRING_PROFILES_ACTIVE: prod
+    restart: unless-stopped
+    networks:
+      - lendmate-net
+
+volumes:
+  postgres_data:
