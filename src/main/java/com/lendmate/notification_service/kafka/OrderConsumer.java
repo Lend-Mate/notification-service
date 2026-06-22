@@ -16,7 +16,9 @@ public class OrderConsumer {
     @KafkaListener(topics = "order-topic", groupId = "notification-service")
     public void handleOrderEvent(OrderEvent event){
         String email = userServiceClient.getEmailByUserId(event.getUserId());
-        log.info("Order event received: orderId={}, status={}, userId={}", event.getOrderId(), event.getStatus(), event.getUserId());
-        mailService.sendOrderConfirmation(email, event.getOrderId());
+        String ownerEmail = userServiceClient.getEmailByUserId(event.getUserId());
+
+        log.info("Order event received: orderId={}, status={}, userId={}, orderNumber={}", event.getOrderId(), event.getStatus(), event.getUserId(), event.getOrderNumber());
+        mailService.sendOrderConfirmation(email, event.getOrderNumber());
     }
 }

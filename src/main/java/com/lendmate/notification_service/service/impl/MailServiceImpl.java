@@ -43,13 +43,13 @@ public class MailServiceImpl implements MailService {
     }
 
     @Override
-    public void sendOrderConfirmation(String to, Long orderId) {
+    public void sendOrderConfirmation(String to, String orderNumber) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             Context context = new Context();
-            context.setVariable("orderId", orderId);
+            context.setVariable("orderNumber", orderNumber);
 
             String html = templateEngine.process("order-confirmation", context);
             helper.setTo(to);

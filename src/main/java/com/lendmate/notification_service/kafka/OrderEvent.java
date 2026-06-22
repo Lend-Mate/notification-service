@@ -11,4 +11,5 @@ public class OrderEvent {
     private Long orderId;
     private String status;
     private Long userId;
+    private String orderNumber;
 }

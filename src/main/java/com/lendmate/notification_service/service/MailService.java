@@ -5,5 +5,5 @@ import jakarta.mail.MessagingException;
 public interface MailService {
     void sendPlainText(String to, String subject, String body);
     void sendHtml(String to, String subject, String htmlBody);
-    void sendOrderConfirmation(String to, Long orderId);
+    void sendOrderConfirmation(String to, String orderNumber);
 }
