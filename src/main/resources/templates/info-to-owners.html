@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { background-color: #2196F3; color: white; padding: 24px; text-align: center; }
+        .header h1 { margin: 0; font-size: 22px; }
+        .header p { margin: 6px 0 0; font-size: 14px; opacity: 0.85; }
+        .content { padding: 28px; color: #333; }
+        .product-card { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; margin: 20px 0; }
+        .product-image { width: 100%; height: 200px; object-fit: cover; display: block; }
+        .product-details { padding: 16px; }
+        .product-name { font-size: 18px; font-weight: bold; color: #1a1a1a; margin: 0 0 8px; }
+        .product-description { font-size: 14px; color: #666; margin: 0 0 12px; line-height: 1.5; }
+        .product-price { font-size: 20px; font-weight: bold; color: #2196F3; }
+        .order-info { background-color: #f9f9f9; border-radius: 8px; padding: 16px; margin: 20px 0; }
+        .order-info p { margin: 6px 0; font-size: 14px; color: #555; }
+        .order-info span { font-weight: bold; color: #1a1a1a; }
+        .highlight { background-color: #e3f2fd; border-left: 4px solid #2196F3; padding: 12px 16px; border-radius: 4px; margin: 16px 0; }
+        .footer { text-align: center; color: #999; font-size: 12px; padding: 20px; border-top: 1px solid #eee; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🎉 Ürününüz Kiralandı!</h1>
+        <p>Bir kullanıcı ürününüzü satın aldı</p>
+    </div>
+
+    <div class="content">
+        <p>Merhaba <strong th:text="${ownerName}">Kullanıcı</strong>,</p>
+        <p>Harika haber! Aşağıdaki ürününüz başarıyla kiralandı. Kiracı ile iletişime geçerek teslim sürecini başlatabilirsiniz.</p>
+
+        <div class="product-card">
+            <img class="product-image"
+                 th:src="${productImageUrl}"
+                 src="https://via.placeholder.com/600x200?text=Urun+Resmi"
+                 alt="Ürün Resmi"/>
+            <div class="product-details">
+                <p class="product-name" th:text="${productName}">Ürün Adı</p>
+                <p class="product-description" th:text="${productDescription}">Ürün açıklaması burada yer alacak.</p>
+                <p class="product-price">₺<span th:text="${productPrice}">0.00</span> <span style="font-size:13px; color:#888; font-weight:normal;">/ gün</span></p>
+            </div>
+        </div>
+
+        <div class="order-info">
+            <p>📦 Sipariş Numarası: <span th:text="${orderNumber}">-</span></p>
+            <p>📅 Kiralama Başlangıcı: <span th:text="${startDate}">-</span></p>
+            <p>📅 Kiralama Bitişi: <span th:text="${endDate}">-</span></p>
+            <p>💰 Toplam Kazanç: <span>₺<span th:text="${totalEarning}">0.00</span></span></p>
+        </div>
+
+        <div class="highlight">
+            <strong>Yapmanız gerekenler:</strong> Kiracı ile iletişime geçerek ürünün teslim tarihini ve yerini belirleyin. Teslim öncesinde ürününüzün fotoğrafını çekmeyi unutmayın.
+        </div>
+
+        <p>Sorularınız için uygulamamız üzerinden destek alabilirsiniz.</p>
+        <p>İyi kiralar dileriz! 🚀</p>
+    </div>
+
+    <div class="footer">
+        <p>Bu mail otomatik gönderilmiştir, lütfen yanıtlamayınız.</p>
+        <p>© 2026 LendMate. Tüm hakları saklıdır.</p>
+    </div>
+</div>
+</body>
+</html>

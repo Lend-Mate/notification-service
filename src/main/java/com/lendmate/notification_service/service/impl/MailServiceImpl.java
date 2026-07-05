@@ -1,5 +1,6 @@
 package com.lendmate.notification_service.service.impl;
 
+import com.lendmate.notification_service.dto.InfoOwnerDto;
 import com.lendmate.notification_service.service.MailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -38,26 +39,43 @@ public class MailServiceImpl implements MailService {
             helper.setText(htmlBody, true); // true means this is HTML
             mailSender.send(message);
         } catch (MessagingException ex){
-            log.debug("exception: " + ex);
+            log.debug("MessagingException: " + ex);
         }
     }
 
     @Override
     public void sendOrderConfirmation(String to, String orderNumber) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
             Context context = new Context();
             context.setVariable("orderNumber", orderNumber);
 
             String html = templateEngine.process("order-confirmation", context);
-            helper.setTo(to);
-            helper.setSubject("Siparişiniz Alındı!");
-            helper.setText(html, true);
-            mailSender.send(message);
+            this.sendHtml(to, "Siparişiniz Alındı!", html);
             log.info("Mail gönderildi: {}", to);
-        } catch (MessagingException e) {
+        } catch (Exception e) {
+            log.error("Mail gönderilemedi: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendInfoToProductOwners(InfoOwnerDto infoOwnerDto) {
+        try {
+            Context context = new Context();
+            context.setVariable("ownerName", infoOwnerDto.getOwnerName());
+            context.setVariable("ownerEmail", infoOwnerDto.getOwnerEmail());
+            context.setVariable("productName", infoOwnerDto.getProductName());
+            context.setVariable("productDescription", infoOwnerDto.getProductDescription());
+            context.setVariable("productPrice", infoOwnerDto.getProductPrice());
+            context.setVariable("productImageUrl", infoOwnerDto.getProductImage());
+            context.setVariable("orderNumber", infoOwnerDto.getOrderNumber());
+            context.setVariable("startDate", infoOwnerDto.getStartDate());
+            context.setVariable("endDate", infoOwnerDto.getEndDate());
+            context.setVariable("totalEarning", infoOwnerDto.getTotalEarning());
+
+            String html = templateEngine.process("info-to-owners", context);
+            this.sendHtml(infoOwnerDto.getOwnerEmail(), "Siparişiniz Alındı!", html);
+            log.info("Mail gönderildi: {}", infoOwnerDto.getOwnerEmail());
+        } catch (Exception e) {
             log.error("Mail gönderilemedi: {}", e.getMessage());
         }
     }

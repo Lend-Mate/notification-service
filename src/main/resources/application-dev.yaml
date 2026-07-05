@@ -12,3 +12,9 @@ logging:
       project:
         lendmate: DEBUG
 
+
+user-service:
+  url: http://localhost:8081
+
+product-service:
+  url: http://localhost:8080
