@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 public class InfoOwnerDto {
+    private String title;
     private String ownerName;
     private String ownerEmail;
     private String productName;
@@ -19,4 +20,5 @@ public class InfoOwnerDto {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private BigDecimal totalEarning;
+    private String html;
 }

@@ -42,41 +42,4 @@ public class MailServiceImpl implements MailService {
             log.debug("MessagingException: " + ex);
         }
     }
-
-    @Override
-    public void sendOrderConfirmation(String to, String orderNumber) {
-        try {
-            Context context = new Context();
-            context.setVariable("orderNumber", orderNumber);
-
-            String html = templateEngine.process("order-confirmation", context);
-            this.sendHtml(to, "Siparişiniz Alındı!", html);
-            log.info("Mail gönderildi: {}", to);
-        } catch (Exception e) {
-            log.error("Mail gönderilemedi: {}", e.getMessage());
-        }
-    }
-
-    @Override
-    public void sendInfoToProductOwners(InfoOwnerDto infoOwnerDto) {
-        try {
-            Context context = new Context();
-            context.setVariable("ownerName", infoOwnerDto.getOwnerName());
-            context.setVariable("ownerEmail", infoOwnerDto.getOwnerEmail());
-            context.setVariable("productName", infoOwnerDto.getProductName());
-            context.setVariable("productDescription", infoOwnerDto.getProductDescription());
-            context.setVariable("productPrice", infoOwnerDto.getProductPrice());
-            context.setVariable("productImageUrl", infoOwnerDto.getProductImage());
-            context.setVariable("orderNumber", infoOwnerDto.getOrderNumber());
-            context.setVariable("startDate", infoOwnerDto.getStartDate());
-            context.setVariable("endDate", infoOwnerDto.getEndDate());
-            context.setVariable("totalEarning", infoOwnerDto.getTotalEarning());
-
-            String html = templateEngine.process("info-to-owners", context);
-            this.sendHtml(infoOwnerDto.getOwnerEmail(), "Siparişiniz Alındı!", html);
-            log.info("Mail gönderildi: {}", infoOwnerDto.getOwnerEmail());
-        } catch (Exception e) {
-            log.error("Mail gönderilemedi: {}", e.getMessage());
-        }
-    }
 }
