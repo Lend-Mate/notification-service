@@ -31,34 +31,56 @@ public class OrderConsumer {
     private final SpringTemplateEngine templateEngine;
 
     @KafkaListener(topics = "order-topic", groupId = "notification-service")
-    public void handleOrderEvent(OrderEvent event){
-        UserResponse user = userServiceClient.getUserById(event.getUserId());
+    public void handleOrderEvent(OrderEvent event) {
+        try {
+            UserResponse user = userServiceClient.getUserById(event.getUserId());
 
-        for(int i = 0; i < event.getItems().size(); i++){
-            Long productId = event.getItems().get(i).getProductId();
-            LocalDateTime startDate = event.getItems().get(i).getStartDate();
-            LocalDateTime endDate = event.getItems().get(i).getEndDate();
+            for (int i = 0; i < event.getItems().size(); i++) {
+                Long productId = event.getItems().get(i).getProductId();
+                LocalDateTime startDate = event.getItems().get(i).getStartDate();
+                LocalDateTime endDate = event.getItems().get(i).getEndDate();
 
 
-            ProductResponse productDetail = productServiceClient.getProductDetail(productId);
-            UserResponse owner = userServiceClient.getUserById(productDetail.getOwnerId());
+                ProductResponse productDetail = productServiceClient.getProductDetail(productId);
+                UserResponse owner = userServiceClient.getUserById(productDetail.getOwnerId());
 
-            // Calculate total earning by multiplying price by day difference between start and end date
-            long daysBetween = Duration.between(startDate, endDate).toDays();
-            BigDecimal totalEarning = productDetail.getPrice().multiply(BigDecimal.valueOf(daysBetween));
+                // Calculate total earning by multiplying price by day difference between start and end date
+                long daysBetween = Duration.between(startDate, endDate).toDays();
+                BigDecimal totalEarning = productDetail.getPrice().multiply(BigDecimal.valueOf(daysBetween));
 
-            String imageUrl = productDetail.getImages().isEmpty() ?
-                    Constants.IMAGE_DEFAULT_URL :
-                    Constants.S3_BUCKET_URL + productDetail.getImages().getFirst().getImageUrl();
+                String imageUrl = productDetail.getImages().isEmpty() ?
+                        Constants.IMAGE_DEFAULT_URL :
+                        Constants.S3_BUCKET_URL + productDetail.getImages().getFirst().getImageUrl();
 
-            String title = Constants.ORDER_TITLE_FOR_OWNER;
+                String title = Constants.ORDER_TITLE_FOR_OWNER;
 
-            String htmlContent = generateHtmlContent(owner, productDetail, imageUrl, event, startDate, endDate, totalEarning, "info-to-owners");
-            mailService.sendHtml(owner.getEmail(), title, htmlContent);
+                String htmlContent = generateHtmlContent(owner, productDetail, imageUrl, event, startDate, endDate, totalEarning, "info-to-owners");
+                mailService.sendHtml(owner.getEmail(), title, htmlContent);
+
+                NotificationRequest notificationReq = new NotificationRequest(
+                        owner.getId(),
+                        "INFORM_TO_OWNER",
+                        "EMAIL",
+                        title,
+                        htmlContent,
+
+                        //TODO: bildirim statusleri oluşturulacak enum şeklinde 'FAILED, PROCESSED' vs.
+                        "COMPLETED"
+                );
+                notificationService.saveNotification(notificationReq);
+
+            }
+
+            String title = Constants.ORDER_TITLE_FOR_CUSTOMER;
+
+            String htmlContent = generateHtmlContent(null, null, null, event, null, null, null, "order-confirmation");
+
+            log.info("Order event received: orderId={}, status={}, userId={}, orderNumber={}", event.getOrderId(), event.getStatus(), event.getUserId(), event.getOrderNumber());
+            mailService.sendHtml(user.getEmail(), title, htmlContent);
 
             NotificationRequest notificationReq = new NotificationRequest(
-                    owner.getId(),
-                    "INFORM_TO_OWNER",
+                    user.getId(),
+                    "INFORM_TO_CUSTOMER",
                     "EMAIL",
                     title,
                     htmlContent,
@@ -67,26 +89,10 @@ public class OrderConsumer {
                     "COMPLETED"
             );
             notificationService.saveNotification(notificationReq);
+        } catch (Exception exception) {
+            log.error("Order event process does not work: orderId{}, userId{}, orderNumber{}", event.getOrderId(), event.getUserId(), event.getOrderNumber(), exception);
+            // TODO: ileride Dead Letter Topic (DLT) stratejisi eklenip mesaj kaybı önlenebilir
         }
-
-        String title = Constants.ORDER_TITLE_FOR_CUSTOMER;
-
-        String htmlContent = generateHtmlContent(null, null, null, event, null, null, null, "order-confirmation");
-
-        log.info("Order event received: orderId={}, status={}, userId={}, orderNumber={}", event.getOrderId(), event.getStatus(), event.getUserId(), event.getOrderNumber());
-        mailService.sendHtml(user.getEmail(), title, htmlContent);
-
-        NotificationRequest notificationReq = new NotificationRequest(
-                 user.getId(),
-                "INFORM_TO_CUSTOMER",
-                "EMAIL",
-                title,
-                htmlContent,
-
-                //TODO: bildirim statusleri oluşturulacak enum şeklinde 'FAILED, PROCESSED' vs.
-                "COMPLETED"
-        );
-        notificationService.saveNotification(notificationReq);
     }
 
     private String generateHtmlContent(

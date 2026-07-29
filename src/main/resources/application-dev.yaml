@@ -37,11 +37,11 @@ otel:
     attributes:
       service.name: ${spring.application.name}
   logs:
-    exporter: none
+    exporter: otlp
   traces:
     exporter: otlp
   metrics:
-    exporter: none
+    exporter: otlp
   java:
     disabled:
       resource:
