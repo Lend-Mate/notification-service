@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -27,9 +28,11 @@ public class MailServiceImpl implements MailService {
         message.setSubject(subject);
         message.setText(body);
         mailSender.send(message);
+
     }
 
     @Override
+    @Async
     public void sendHtml(String to, String subject, String htmlBody) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -39,7 +42,7 @@ public class MailServiceImpl implements MailService {
             helper.setText(htmlBody, true); // true means this is HTML
             mailSender.send(message);
         } catch (MessagingException ex){
-            log.debug("MessagingException: " + ex);
+            log.error("Mail gönderilemedi: to={}, subject={}", to, subject, ex);
         }
     }
 }

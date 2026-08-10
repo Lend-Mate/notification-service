@@ -21,3 +21,21 @@ user-service:
 
 product-service:
   url: http://localhost:8080
+
+otel:
+  exporter:
+    otlp:
+      endpoint: http://localhost:4318
+  resource:
+    attributes:
+      service.name: ${spring.application.name}
+  logs:
+    exporter: otlp
+  traces:
+    exporter: otlp
+  metrics:
+    exporter: otlp
+  java:
+    disabled:
+      resource:
+        providers: io.opentelemetry.instrumentation.resources.ProcessResourceProvider
