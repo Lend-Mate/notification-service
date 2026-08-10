@@ -27,3 +27,19 @@ spring:
           starttls:
             enable: true
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*" # actuator / metrics / health endpointlerini dışarı açar
+  metrics:
+    tags:
+      # Grafana dashboard'larının uygulamayı ayırt etmesi için service.name şarttır
+      application: ${spring.application.name:order-service}
+  tracing:
+    sampling:
+      probability: 1.0
+
+logging:
+  level:
+    com.project: INFO
