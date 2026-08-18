@@ -1,8 +1,9 @@
 package com.lendmate.notification_service.service;
 
-import com.lendmate.notification_service.dto.InfoOwnerDto;
+
+import java.util.concurrent.CompletableFuture;
 
 public interface MailService {
     void sendPlainText(String to, String subject, String body);
-    void sendHtml(String to, String subject, String htmlBody);
+    CompletableFuture<Boolean> sendHtml(String to, String subject, String htmlBody);
 }

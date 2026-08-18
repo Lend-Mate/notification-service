@@ -1,32 +1,22 @@
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-server:
-  forward-headers-strategy: framework
-  port: 8083
-
 spring:
   application:
     name: notification-service
   profiles:
-    active: dev
-  jpa:
-    hibernate:
-      ddl-auto: validate
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: lendmate.pro@gmail.com
-    password: hffhwylvlhvuxhtv
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-          connectiontimeout: 5000 # max time to connect to smtp server
-          timeout: 5000  # max time to wait response from server
-          writetimeout: 5000  # max time to send mail context to server
+    active: ${ACTIVE_PROFILE:dev}
 
+server:
+  port: 8083
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+
+---
+spring:
+  config:
+    activate:
+      on-profile: stage
+    import: "configserver:${CONFIG_SERVER_URL}"
