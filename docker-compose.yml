@@ -20,7 +20,7 @@ services:
         -XX:+UseSerialGC
         -Xss256k
         -XX:MaxMetaspaceSize=256m
-    mem_limit: 900m
+    mem_limit: 350m
     restart: unless-stopped
     networks:
       - lendmate-net
