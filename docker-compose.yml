@@ -12,6 +12,7 @@ services:
       SPRING_DATASOURCE_USERNAME: lendmate
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       SPRING_PROFILES_ACTIVE: prod
+      CONFIG_SERVER_URL: http://config-server:8888
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: notification-service
       JAVA_OPTS: >-
