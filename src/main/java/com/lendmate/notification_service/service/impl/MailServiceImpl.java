@@ -1,8 +1,6 @@
 package com.lendmate.notification_service.service.impl;
 
-import com.lendmate.notification_service.dto.InfoOwnerDto;
 import com.lendmate.notification_service.service.MailService;
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,8 +9,9 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
+
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +32,7 @@ public class MailServiceImpl implements MailService {
 
     @Override
     @Async
-    public void sendHtml(String to, String subject, String htmlBody) {
+    public CompletableFuture<Boolean> sendHtml(String to, String subject, String htmlBody){
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
@@ -41,8 +40,10 @@ public class MailServiceImpl implements MailService {
             helper.setSubject(subject);
             helper.setText(htmlBody, true); // true means this is HTML
             mailSender.send(message);
-        } catch (MessagingException ex){
+           return CompletableFuture.completedFuture(true);
+        } catch (Exception ex){
             log.error("Mail gönderilemedi: to={}, subject={}", to, subject, ex);
+            return CompletableFuture.completedFuture(false);
         }
     }
 }

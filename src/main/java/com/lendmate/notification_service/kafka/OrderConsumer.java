@@ -19,6 +19,7 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
@@ -55,8 +56,9 @@ public class OrderConsumer {
                 String title = Constants.ORDER_TITLE_FOR_OWNER;
 
                 String htmlContent = generateHtmlContent(owner, productDetail, imageUrl, event, startDate, endDate, totalEarning, "info-to-owners");
-                mailService.sendHtml(owner.getEmail(), title, htmlContent);
+                CompletableFuture<Boolean> isSuccessFuture = mailService.sendHtml(owner.getEmail(), title, htmlContent);
 
+                boolean isSuccess = isSuccessFuture.get();
                 NotificationRequest notificationReq = new NotificationRequest(
                         owner.getId(),
                         "INFORM_TO_OWNER",
@@ -65,7 +67,7 @@ public class OrderConsumer {
                         htmlContent,
 
                         //TODO: bildirim statusleri oluşturulacak enum şeklinde 'FAILED, PROCESSED' vs.
-                        "COMPLETED"
+                        isSuccess ? "COMPLETED" : "FAILED"
                 );
                 notificationService.saveNotification(notificationReq);
 
@@ -76,7 +78,8 @@ public class OrderConsumer {
             String htmlContent = generateHtmlContent(null, null, null, event, null, null, null, "order-confirmation");
 
             log.info("Order event received: orderId={}, status={}, userId={}, orderNumber={}", event.getOrderId(), event.getStatus(), event.getUserId(), event.getOrderNumber());
-            mailService.sendHtml(user.getEmail(), title, htmlContent);
+            CompletableFuture<Boolean> isSuccessFuture = mailService.sendHtml(user.getEmail(), title, htmlContent);
+            boolean isSuccess = isSuccessFuture.get();
 
             NotificationRequest notificationReq = new NotificationRequest(
                     user.getId(),
@@ -86,7 +89,7 @@ public class OrderConsumer {
                     htmlContent,
 
                     //TODO: bildirim statusleri oluşturulacak enum şeklinde 'FAILED, PROCESSED' vs.
-                    "COMPLETED"
+                    isSuccess ? "COMPLETED" : "FAILED"
             );
             notificationService.saveNotification(notificationReq);
         } catch (Exception exception) {
