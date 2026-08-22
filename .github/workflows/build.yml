@@ -25,6 +25,8 @@ jobs:
           CONFIG_SERVER_URL: http://178.104.91.123:8888
           OTEL_EXPORTER_OTLP_ENDPOINT: http://178.104.91.123:4318
           OTEL_SERVICE_NAME: notification-service
+          MAIL_USERNAME: lendmate.pro@gmail.com
+          MAIL_PASSWORD: hffhwylvlhvuxhtv
 
   deploy:
     runs-on: ubuntu-latest
