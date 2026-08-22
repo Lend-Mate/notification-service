@@ -20,6 +20,11 @@ jobs:
 
       - name: Run Tests
         run: mvn test
+        env:
+          SPRING_PROFILES_ACTIVE: test
+          CONFIG_SERVER_URL: http://178.104.91.123:8888
+          OTEL_EXPORTER_OTLP_ENDPOINT: http://178.104.91.123:4318
+          OTEL_SERVICE_NAME: notification-service
 
   deploy:
     runs-on: ubuntu-latest
