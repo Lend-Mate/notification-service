@@ -1,6 +1,6 @@
 # Notification Service
 
-Sipariş olaylarını dinleyerek müşterilere ve ürün sahiplerine e-posta bildirimi gönderen, bildirim kayıtlarını yöneten LendMate servisi.
+Sipariş olaylarını dinleyerek müşterilere ve ürün sahiplerine e-posta bildirimi gönderen, bildirim kayıtlarını yöneten HemenKirala servisi.
 
 ---
 
