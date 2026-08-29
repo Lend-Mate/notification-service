@@ -2,6 +2,7 @@ package com.lendmate.notificationservice.kafka;
 
 import com.lendmate.notificationservice.dto.request.NotificationRequest;
 import com.lendmate.notificationservice.service.NotificationService;
+import com.lendmate.notificationservice.service.ProcessedEventService;
 import com.lendmate.notificationservice.utility.Constants;
 import com.lendmate.notificationservice.dto.response.ProductResponse;
 import com.lendmate.notificationservice.dto.response.UserResponse;
@@ -19,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @Service
 @Slf4j
@@ -29,60 +31,44 @@ public class OrderConsumer {
     private final ProductServiceClient productServiceClient;
     private final NotificationService notificationService;
     private final SpringTemplateEngine templateEngine;
+    private final ProcessedEventService processedEventService;
 
-    @KafkaListener(topics = "order-topic", groupId = "notification-service")
-    public void handleOrderEvent(OrderEvent event) {
-        try {
-            UserResponse user = userServiceClient.getUserById(event.getUserId());
+    @KafkaListener(topics = "order-events", groupId = "notification-service")
+    public void handleOrderEvent(OrderEvent event) throws ExecutionException, InterruptedException {
 
-            for (int i = 0; i < event.getItems().size(); i++) {
-                Long productId = event.getItems().get(i).getProductId();
-                LocalDateTime startDate = event.getItems().get(i).getStartDate();
-                LocalDateTime endDate = event.getItems().get(i).getEndDate();
+        if (processedEventService.isProcessed(event.getEventId())) {
+            log.info("Event already processed, skip: eventId={}, orderId={}", event.getEventId(), event.getOrderId());
+            return;
+        }
+
+        UserResponse user = userServiceClient.getUserById(event.getUserId());
+
+        for (int i = 0; i < event.getItems().size(); i++) {
+            Long productId = event.getItems().get(i).getProductId();
+            LocalDateTime startDate = event.getItems().get(i).getStartDate();
+            LocalDateTime endDate = event.getItems().get(i).getEndDate();
 
 
-                ProductResponse productDetail = productServiceClient.getProductDetail(productId);
-                UserResponse owner = userServiceClient.getUserById(productDetail.getOwnerId());
+            ProductResponse productDetail = productServiceClient.getProductDetail(productId);
+            UserResponse owner = userServiceClient.getUserById(productDetail.getOwnerId());
 
-                // Calculate total earning by multiplying price by day difference between start and end date
-                long daysBetween = Duration.between(startDate, endDate).toDays();
-                BigDecimal totalEarning = productDetail.getPrice().multiply(BigDecimal.valueOf(daysBetween));
+            // Calculate total earning by multiplying price by day difference between start and end date
+            long daysBetween = Duration.between(startDate, endDate).toDays();
+            BigDecimal totalEarning = productDetail.getPrice().multiply(BigDecimal.valueOf(daysBetween));
 
-                String imageUrl = productDetail.getImages().isEmpty() ?
-                        Constants.IMAGE_DEFAULT_URL :
-                        Constants.S3_BUCKET_URL + productDetail.getImages().getFirst().getImageUrl();
+            String imageUrl = productDetail.getImages().isEmpty() ?
+                    Constants.IMAGE_DEFAULT_URL :
+                    Constants.S3_BUCKET_URL + productDetail.getImages().getFirst().getImageUrl();
 
-                String title = Constants.ORDER_TITLE_FOR_OWNER;
+            String title = Constants.ORDER_TITLE_FOR_OWNER;
 
-                String htmlContent = generateHtmlContent(owner, productDetail, imageUrl, event, startDate, endDate, totalEarning, "info-to-owners");
-                CompletableFuture<Boolean> isSuccessFuture = mailService.sendHtml(owner.getEmail(), title, htmlContent);
+            String htmlContent = generateHtmlContent(owner, productDetail, imageUrl, event, startDate, endDate, totalEarning, "info-to-owners");
+            CompletableFuture<Boolean> isSuccessFuture = mailService.sendHtml(owner.getEmail(), title, htmlContent);
 
-                boolean isSuccess = isSuccessFuture.get();
-                NotificationRequest notificationReq = new NotificationRequest(
-                        owner.getId(),
-                        "INFORM_TO_OWNER",
-                        "EMAIL",
-                        title,
-                        htmlContent,
-
-                        //TODO: bildirim statusleri oluşturulacak enum şeklinde 'FAILED, PROCESSED' vs.
-                        isSuccess ? "COMPLETED" : "FAILED"
-                );
-                notificationService.saveNotification(notificationReq);
-
-            }
-
-            String title = Constants.ORDER_TITLE_FOR_CUSTOMER;
-
-            String htmlContent = generateHtmlContent(null, null, null, event, null, null, null, "order-confirmation");
-
-            log.info("Order event received: orderId={}, status={}, userId={}, orderNumber={}", event.getOrderId(), event.getStatus(), event.getUserId(), event.getOrderNumber());
-            CompletableFuture<Boolean> isSuccessFuture = mailService.sendHtml(user.getEmail(), title, htmlContent);
             boolean isSuccess = isSuccessFuture.get();
-
             NotificationRequest notificationReq = new NotificationRequest(
-                    user.getId(),
-                    "INFORM_TO_CUSTOMER",
+                    owner.getId(),
+                    "INFORM_TO_OWNER",
                     "EMAIL",
                     title,
                     htmlContent,
@@ -91,10 +77,30 @@ public class OrderConsumer {
                     isSuccess ? "COMPLETED" : "FAILED"
             );
             notificationService.saveNotification(notificationReq);
-        } catch (Exception exception) {
-            log.error("Order event process does not work: orderId{}, userId{}, orderNumber{}", event.getOrderId(), event.getUserId(), event.getOrderNumber(), exception);
-            // TODO: ileride Dead Letter Topic (DLT) stratejisi eklenip mesaj kaybı önlenebilir
+
         }
+
+        String title = Constants.ORDER_TITLE_FOR_CUSTOMER;
+
+        String htmlContent = generateHtmlContent(null, null, null, event, null, null, null, "order-confirmation");
+
+        log.info("Order event received: orderId={}, status={}, userId={}, orderNumber={}", event.getOrderId(), event.getStatus(), event.getUserId(), event.getOrderNumber());
+        CompletableFuture<Boolean> isSuccessFuture = mailService.sendHtml(user.getEmail(), title, htmlContent);
+        boolean isSuccess = isSuccessFuture.get();
+
+        NotificationRequest notificationReq = new NotificationRequest(
+                user.getId(),
+                "INFORM_TO_CUSTOMER",
+                "EMAIL",
+                title,
+                htmlContent,
+
+                //TODO: bildirim statusleri oluşturulacak enum şeklinde 'FAILED, PROCESSED' vs.
+                isSuccess ? "COMPLETED" : "FAILED"
+        );
+        notificationService.saveNotification(notificationReq);
+        processedEventService.markAsProcessed(event.getEventId());
+        // TODO: ileride Dead Letter Topic (DLT) stratejisi eklenip mesaj kaybı önlenebilir
     }
 
     private String generateHtmlContent(
