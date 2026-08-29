@@ -11,7 +11,14 @@ import com.lendmate.notificationservice.feignClient.UserServiceClient;
 import com.lendmate.notificationservice.service.MailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.kafka.retrytopic.TopicSuffixingStrategy;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -33,6 +40,13 @@ public class OrderConsumer {
     private final SpringTemplateEngine templateEngine;
     private final ProcessedEventService processedEventService;
 
+    @RetryableTopic(
+            attempts = "4",
+            backoff = @Backoff(delay = 2000, multiplier = 2, maxDelay = 5000),
+            autoCreateTopics = "true",
+            numPartitions = "1",
+            topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE,
+            dltTopicSuffix = ".DLT")
     @KafkaListener(topics = "order-events", groupId = "notification-service")
     public void handleOrderEvent(OrderEvent event) throws ExecutionException, InterruptedException {
 
@@ -101,6 +115,13 @@ public class OrderConsumer {
         notificationService.saveNotification(notificationReq);
         processedEventService.markAsProcessed(event.getEventId());
         // TODO: ileride Dead Letter Topic (DLT) stratejisi eklenip mesaj kaybı önlenebilir
+    }
+
+    @DltHandler
+    public void handleDlt(@Payload OrderEvent event,
+                          @Header(KafkaHeaders.EXCEPTION_MESSAGE) String exceptionMessage,
+                          @Header(KafkaHeaders.ORIGINAL_TOPIC) String originalTopic) {
+        log.error("DLT events: orderId={}, eventId={}, orijinalTopic={}, hata={}", event.getOrderId(), event.getEventId(), originalTopic, exceptionMessage);
     }
 
     private String generateHtmlContent(
