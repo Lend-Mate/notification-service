@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.UUID;
 
-public interface FailedEventRepository extends JpaRepository<FailedEvent, UUID> {
+public interface FailedEventRepository extends JpaRepository<FailedEvent, Long> {
     List<FailedEvent> findByStatus(FailedEventStatus status);
     long countByEventId(UUID eventId);
 }

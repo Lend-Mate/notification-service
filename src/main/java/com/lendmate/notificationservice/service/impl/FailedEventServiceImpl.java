@@ -40,18 +40,13 @@ public class FailedEventServiceImpl implements FailedEventService {
     }
 
     @Override
-    public Optional<FailedEvent> findById(UUID id) {
-        return repository.findById(id);
-    }
-
-    @Override
     public long countAttempts(UUID eventId) {
         return repository.countByEventId(eventId);
     }
 
     @Override
     @Transactional
-    public void markAsRetried(UUID id) {
+    public void markAsRetried(Long id) {
         repository.findById(id).ifPresent(f->{
             f.setStatus(FailedEventStatus.RETRIED);
             f.setRetriedAt(Instant.now());

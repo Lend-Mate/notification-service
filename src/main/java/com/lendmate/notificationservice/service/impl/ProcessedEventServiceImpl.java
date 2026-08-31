@@ -27,7 +27,10 @@ public class ProcessedEventServiceImpl implements ProcessedEventService {
     @Transactional
     public void markAsProcessed(UUID eventId) {
         try {
-            repository.save(new ProcessedEvent(eventId, Instant.now()));
+            repository.save(ProcessedEvent.builder()
+                    .eventId(eventId)
+                    .processedAt(Instant.now())
+                    .build());
         }catch (DataIntegrityViolationException ex){
             log.warn("Event already marked: eventId={}", eventId);
         }

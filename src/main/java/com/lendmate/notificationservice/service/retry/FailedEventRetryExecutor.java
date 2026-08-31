@@ -32,19 +32,15 @@ public class FailedEventRetryExecutor {
         }
 
         log.info("Reprocessing {} pending failed events", pendingEvents.size());
-        pendingEvents.forEach(f-> reprocessFailedEvent(f.getId()));
+        for (FailedEvent pendingEvent : pendingEvents) {
+            reprocessFailedEvent(pendingEvent);
+        }
         return pendingEvents.size();
     }
 
 
     @Transactional
-    public void reprocessFailedEvent(UUID failedEventId) {
-      FailedEvent failedEvent = failedEventService.findById(failedEventId).orElse(null);
-        if (failedEvent == null) {
-            log.warn("Failed event not found, skipping: id={}", failedEventId);
-            return;
-        }
-
+    public void reprocessFailedEvent(FailedEvent failedEvent) {
         long attemptCount = failedEventService.countAttempts(failedEvent.getEventId());
         if (attemptCount >= MAX_AUTO_RETRY_ATTEMPTS) {
             log.warn("Event {} has reached max auto-retry ({}), skipping - manuel review required", failedEvent.getEventId(), MAX_AUTO_RETRY_ATTEMPTS);

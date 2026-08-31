@@ -19,8 +19,8 @@ import java.util.UUID;
 public class FailedEvent {
 
     @Id
-    @GeneratedValue
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     private UUID eventId;
     private Long orderId;
