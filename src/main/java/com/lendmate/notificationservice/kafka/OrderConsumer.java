@@ -1,6 +1,9 @@
 package com.lendmate.notificationservice.kafka;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lendmate.notificationservice.dto.request.NotificationRequest;
+import com.lendmate.notificationservice.service.FailedEventService;
 import com.lendmate.notificationservice.service.NotificationService;
 import com.lendmate.notificationservice.service.ProcessedEventService;
 import com.lendmate.notificationservice.utility.Constants;
@@ -9,6 +12,7 @@ import com.lendmate.notificationservice.dto.response.UserResponse;
 import com.lendmate.notificationservice.feignClient.ProductServiceClient;
 import com.lendmate.notificationservice.feignClient.UserServiceClient;
 import com.lendmate.notificationservice.service.MailService;
+import feign.RetryableException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.DltHandler;
@@ -20,14 +24,17 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.math.BigDecimal;
+import java.net.ConnectException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 @Service
 @Slf4j
@@ -39,6 +46,8 @@ public class OrderConsumer {
     private final NotificationService notificationService;
     private final SpringTemplateEngine templateEngine;
     private final ProcessedEventService processedEventService;
+    private final ObjectMapper objectMapper;
+    private final FailedEventService failedEventService;
 
     @RetryableTopic(
             attempts = "4",
@@ -46,7 +55,13 @@ public class OrderConsumer {
             autoCreateTopics = "true",
             numPartitions = "1",
             topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE,
-            dltTopicSuffix = ".DLT")
+            dltTopicSuffix = ".DLT",
+            include = {
+                    ConnectException.class,
+                    ResourceAccessException.class,
+                    TimeoutException.class,
+                    RetryableException.class
+            })
     @KafkaListener(topics = "order-events", groupId = "notification-service")
     public void handleOrderEvent(OrderEvent event) throws ExecutionException, InterruptedException {
 
@@ -120,8 +135,12 @@ public class OrderConsumer {
     @DltHandler
     public void handleDlt(@Payload OrderEvent event,
                           @Header(KafkaHeaders.EXCEPTION_MESSAGE) String exceptionMessage,
-                          @Header(KafkaHeaders.ORIGINAL_TOPIC) String originalTopic) {
+                          @Header(KafkaHeaders.ORIGINAL_TOPIC) String originalTopic) throws JsonProcessingException {
         log.error("DLT events: orderId={}, eventId={}, orijinalTopic={}, hata={}", event.getOrderId(), event.getEventId(), originalTopic, exceptionMessage);
+
+        String payloadJson = objectMapper.writeValueAsString(event);
+        failedEventService.recordFailure(event.getEventId(), event.getOrderId(), originalTopic, payloadJson, exceptionMessage);
+
     }
 
     private String generateHtmlContent(

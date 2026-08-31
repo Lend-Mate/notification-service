@@ -5,6 +5,7 @@ import com.lendmate.notificationservice.dto.request.NotificationRequest;
 import com.lendmate.notificationservice.dto.response.NotificationResponse;
 import com.lendmate.notificationservice.service.MailService;
 import com.lendmate.notificationservice.service.NotificationService;
+import com.lendmate.notificationservice.service.retry.FailedEventRetryExecutor;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @AllArgsConstructor
 @RestController
@@ -20,6 +22,7 @@ public class NotificationController {
 
     private final NotificationService notificationService;
     private final MailService mailService;
+    private final FailedEventRetryExecutor retryExecutor;
 
     @GetMapping("/health")
     public String healthCheck() {
@@ -63,5 +66,11 @@ public class NotificationController {
     @PostMapping("/sendHtml")
     public void sendHtml(@RequestBody MailRequest request) {
         mailService.sendHtml(request.to(), request.subject(), request.body());
+    }
+
+    @PostMapping("/internal/retry-failed-events")
+    public ResponseEntity<Map<String, Integer>> retry() {
+        int processedCount = retryExecutor.reprocessAllPending();
+        return ResponseEntity.accepted().body(Map.of("processedCount", processedCount));
     }
 }
